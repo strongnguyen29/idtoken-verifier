@@ -45,9 +45,9 @@ declare class IdTokenVerifier {
    * Creates a new id_token verifier
    * @constructor
    * @param {Object} parameters
-   * @param {string} parameters.issuer name of the issuer of the token
+   * @param {string|string[]} parameters.issuer name of the issuer of the token
    * that should match the `iss` claim in the id_token
-   * @param {string} parameters.audience identifies the recipients that the JWT is intended for
+   * @param {string|string[]} parameters.audience identifies the recipients that the JWT is intended for
    * and should match the `aud` claim
    * @param {Object} [parameters.jwksCache] cache for JSON Web Token Keys. By default it has no cache
    * @param {string} [parameters.jwksURI] A valid, direct URI to fetch the JSON Web Key Set (JWKS).
@@ -58,8 +58,8 @@ declare class IdTokenVerifier {
    * while validating expiration of the id_token
    */
   constructor(parameters: {
-    issuer: string;
-    audience: string;
+    issuer: string | string[];
+    audience: string | string[];
     jwksCache?: any;
     jwksURI?: string;
     expectedAlg?: string;

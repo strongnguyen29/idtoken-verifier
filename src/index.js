@@ -20,9 +20,9 @@ var DEFAULT_LEEWAY = 60;
  * Creates a new id_token verifier
  * @constructor
  * @param {Object} parameters
- * @param {string} parameters.issuer name of the issuer of the token
+ * @param {string|array} parameters.issuer name of the issuer of the token
  * that should match the `iss` claim in the id_token
- * @param {string} parameters.audience identifies the recipients that the JWT is intended for
+ * @param {string|array} parameters.audience identifies the recipients that the JWT is intended for
  * and should match the `aud` claim
  * @param {Object} [parameters.jwksCache] cache for JSON Web Token Keys. By default it has no cache
  * @param {string} [parameters.jwksURI] A valid, direct URI to fetch the JSON Web Key Set (JWKS).
@@ -159,11 +159,22 @@ IdTokenVerifier.prototype.verify = function(token, requestedNonce, cb) {
       );
     }
 
-    if (_this.issuer !== iss) {
+    if (typeof _this.issuer === 'string' && _this.issuer !== iss) {
       return cb(
         new error.TokenValidationError(
           'Issuer (iss) claim mismatch in the ID token, expected "' +
             _this.issuer +
+            '", found "' +
+            iss +
+            '"'
+        ),
+        null
+      );
+    } else if (Array.isArray(_this.issuer) && !_this.issuer.includes(iss)) {
+      return cb(
+        new error.TokenValidationError(
+          'Issuer (iss) claim mismatch in the ID token, expected "' +
+            _this.issuer.join(', ') +
             '", found "' +
             iss +
             '"'
@@ -190,28 +201,60 @@ IdTokenVerifier.prototype.verify = function(token, requestedNonce, cb) {
       );
     }
 
-    if (Array.isArray(aud) && !aud.includes(_this.audience)) {
-      return cb(
-        new error.TokenValidationError(
-          'Audience (aud) claim mismatch in the ID token; expected "' +
-            _this.audience +
-            '" but was not one of "' +
-            aud.join(', ') +
-            '"'
-        ),
-        null
-      );
-    } else if (typeof aud === 'string' && _this.audience !== aud) {
-      return cb(
-        new error.TokenValidationError(
-          'Audience (aud) claim mismatch in the ID token; expected "' +
-            _this.audience +
-            '" but found "' +
-            aud +
-            '"'
-        ),
-        null
-      );
+    if (Array.isArray(aud)) {
+      if (
+        Array.isArray(_this.audience) &&
+        !aud.some(item => _this.audience.includes(item))
+      ) {
+        return cb(
+          new error.TokenValidationError(
+            'Audience (aud) claim mismatch in the ID token; expected "' +
+              _this.audience.join(', ') +
+              '" but was not one of "' +
+              aud.join(', ') +
+              '"'
+          ),
+          null
+        );
+      } else if (
+        typeof _this.audience === 'string' &&
+        !aud.includes(_this.audience)
+      ) {
+        return cb(
+          new error.TokenValidationError(
+            'Audience (aud) claim mismatch in the ID token; expected "' +
+              _this.audience +
+              '" but was not one of "' +
+              aud.join(', ') +
+              '"'
+          ),
+          null
+        );
+      }
+    } else if (typeof aud === 'string') {
+      if (Array.isArray(_this.audience) && !_this.audience.includes(aud)) {
+        return cb(
+          new error.TokenValidationError(
+            'Audience (aud) claim mismatch in the ID token; expected "' +
+              _this.audience.join(', ') +
+              '" but found "' +
+              aud +
+              '"'
+          ),
+          null
+        );
+      } else if (typeof _this.audience === 'string' && _this.audience !== aud) {
+        return cb(
+          new error.TokenValidationError(
+            'Audience (aud) claim mismatch in the ID token; expected "' +
+              _this.audience +
+              '" but found "' +
+              aud +
+              '"'
+          ),
+          null
+        );
+      }
     }
 
     if (requestedNonce) {
@@ -248,11 +291,25 @@ IdTokenVerifier.prototype.verify = function(token, requestedNonce, cb) {
         );
       }
 
-      if (azp !== _this.audience) {
+      if (typeof _this.audience === 'string' && azp !== _this.audience) {
         return cb(
           new error.TokenValidationError(
             'Authorized Party (azp) claim mismatch in the ID token; expected "' +
               _this.audience +
+              '", found "' +
+              azp +
+              '"'
+          ),
+          null
+        );
+      } else if (
+        Array.isArray(_this.audience) &&
+        _this.audience.includes(azp)
+      ) {
+        return cb(
+          new error.TokenValidationError(
+            'Authorized Party (azp) claim mismatch in the ID token; expected "' +
+              _this.audience.join(', ') +
               '", found "' +
               azp +
               '"'
